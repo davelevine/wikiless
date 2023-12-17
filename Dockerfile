@@ -1,10 +1,10 @@
-FROM node:16-alpine AS build
+#https://hub.docker.com/_/node/
+FROM node:20-alpine3.17 AS build
 WORKDIR /wikiless
 COPY . /wikiless
 RUN npm install --no-optional
-
-FROM gcr.io/distroless/nodejs:16
+FROM gcr.io/distroless/nodejs20-debian11
 COPY --from=build /wikiless /wikiless
 WORKDIR /wikiless
-COPY config.js.template config.js
+COPY wikiless.config config.js
 CMD ["src/wikiless.js"]

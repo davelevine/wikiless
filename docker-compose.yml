@@ -1,35 +1,50 @@
-version: "3.9"
-services:
+version: "3.7"
 
-  web:
-    image: ghcr.io/metastem/wikiless:latest
+services:
+  wikiless:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wikiless
+    hostname: wikiless
+    restart: always
+    networks:
+      wikiless_net:
+        ipv4_address: 172.4.0.6
     environment:
-      # see config.js.template for more settings
-      DOMAIN: wikiless.example.org
-      HTTP_ADDR: 0.0.0.0
-      REDIS_URL: redis://redis
+      REDIS_HOST: redis://172.4.0.5:6379
     ports:
-      - 8080:8080
+      - "127.0.0.1:8180:8080" # change port if needed
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    networks:
-      - wikiless
+    depends_on:
+        - wikiless_redis
 
-  redis:
-    image: "redis:alpine"
-    container_name: redis
+  wikiless_redis:
+    container_name: wikiless_redis
+    hostname: wikiless_redis
+    image: redis:latest
+    restart: always
+    networks:
+      wikiless_net:
+        ipv4_address: 172.4.0.5
     user: nobody
     read_only: true
-    tmpfs:
-      - /data:size=10M,mode=0770,uid=65534,gid=65534,noexec,nosuid,nodev
     security_opt:
       - no-new-privileges:true
+    tmpfs:
+      - /data:size=10M,mode=0770,uid=65534,gid=65534,noexec,nosuid,nodev
     cap_drop:
       - ALL
-    networks:
-      - wikiless
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
 
 networks:
-  wikiless:
+  wikiless_net:
+    ipam:
+      config:
+        - subnet: 172.4.0.0/16
